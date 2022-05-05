@@ -1,47 +1,45 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateUserDto } from './dtos/update-user.dto';
-
+import { CreateUserDto } from './dtos/create-user.dto';
 import { User } from './schemas/user.schema';
 import { UsersRepository } from './users.repository';
+import { Messages } from './Messages.data';
+import { InjectModel } from '@nestjs/mongoose';
+import { LoginDto } from './dtos/login.dto';
 
 @Injectable()
 export class UsersService {
-  [x: string]: any;
-  find(arg0: { username: string }) {
-    throw new Error('Method not implemented.');
-  }
-  constructor(private readonly usersRepository: UsersRepository) {}
-
+  constructor(@InjectModel('User') private usersRepository: UsersRepository) {}
+  // get all Users
   async getUsers(): Promise<User[]> {
-    return this.usersRepository.find({});
+    return this.usersRepository.findAll();
+  }
+  // get single user by id
+  async getUserById(id: string): Promise<User> {
+    let user = this.usersRepository.findOne(id);
+    if (!user) {
+      throw new NotFoundException(`${id} ${Messages.USER_NOT_EXIST}`);
+    }
+    return user;
   }
 
-  async getUserById(userId: string): Promise<User> {
-    return this.usersRepository.findOne({ userId });
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    return await this.usersRepository.create(createUserDto);
   }
 
-  async createUser(
-    fullname: string,
-    username: string,
-    email: string,
-    phonenumber: number,
-    password: any,
-  ): Promise<User> {
-    return this.usersRepository.create({
-      fullname,
-      username,
-      email,
-      phonenumber,
-      password,
-      role: {
-        enum: ['superAdmin', 'admin', 'user'],
-        default: 'user',
-      },
-    });
+  async findByLogin(userDTO1: LoginDto) {
+    return await this.usersRepository.findByLogin(userDTO1);
   }
 
-  async updateUser(userId: string, userUpdates: UpdateUserDto): Promise<User> {
-    return this.usersRepository.findOneAndUpdate({ userId }, userUpdates);
+  async update(userUpdates: UpdateUserDto): Promise<User> {
+    return this.usersRepository.update(userUpdates);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    let x = await this.usersRepository.delete(id);
+    console.log(x);
+    return x;
   }
 }
