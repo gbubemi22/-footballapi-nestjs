@@ -3,27 +3,30 @@ import {
   Controller,
   Get,
   Param,
-  Patch,
   Body,
   NotFoundException,
   Post,
+  Put,
+  Delete,
+  HttpCode,
 } from '@nestjs/common';
 
 import { User } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { AuthService } from './auth.service';
+import { LoginDto } from './dtos/login.dto';
+//import { AuthService } from './auth.service';
 
 @Controller('/auth')
 export class UsersController {
   constructor(
-    private readonly usersService: UsersService,
-    private authService:  AuthService,
+    private usersService: UsersService,
+   // private authService:  AuthService,
     ) {}
 
   @Get('/:id')
-  async getUser(@Param('id') id: string): Promise<User> {
+  async getUserById(@Param('id') id: string): Promise<User> {
     const user = await this.usersService.getUserById(id);
 
     if (!user) {
@@ -36,28 +39,42 @@ export class UsersController {
   async getUsers(): Promise<User[]> {
     return this.usersService.getUsers();
   }
+     //Create a User
+  @Post('register')
+  async createUser(@Body() userDTO: CreateUserDto): Promise<User> {
 
-  @Post('/register')
-  async createUser(@Body() createuserDto: CreateUserDto): Promise<User> {
+   const user = await this.usersService.create(userDTO);
 
-   const user = await this.authService.register(
-      createuserDto.fullname,
-      createuserDto.username,
-      createuserDto.email,
-      createuserDto.phonenumber,
-      createuserDto.password,
-    
-    );
-
-    return user;
+   return user;
     
   }
 
-  @Patch('/:id')
-  async updateUser(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.usersService.updateUser(id, updateUserDto);
+  @Post('login')
+  async findByLogin(@Body() loginDTO: LoginDto) {
+
+    const user = await this.usersService.findByLogin(loginDTO);
+
+    return user;
+  }
+
+
+
+
+        //Update A user
+  @Put('/:id')
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+    updateUserDto.id = id
+    
+    return this.usersService.update(updateUserDto);
+        
+  }
+// Delete a User
+  @Delete('/:id')
+  @HttpCode(204)
+  async delete(@Param('id') id: string) {
+    const y = await this.usersService.delete(id);
+    if(!y) {
+      throw new NotFoundException('User not found ....')
+    }
   }
 }
